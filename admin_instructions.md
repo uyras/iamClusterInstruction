@@ -1,5 +1,11 @@
-/usr/libexec/warewulf/wwmkchroot/centos-8-stream.tmpl
-```
+# WIKI для админов (подсказки)
+
+## Скрипт для инициализации centos8-stream через wwmkchroot
+
+Файл: `/usr/libexec/warewulf/wwmkchroot/centos-8-stream.tmpl`
+
+Содержание:
+```bash
 #DESC: Red Hat Enterprise Linux 8-stream
 
 # The general RHEL include has all of the necessary functions, but requires
@@ -44,9 +50,9 @@ PKGLIST="basesystem bash chkconfig coreutils e2fsprogs ethtool
 
 ## Сборка openmpi
 
-libevent libevent-devel pmix libfabric ucx hwloc
+Зависимости: libevent libevent-devel pmix libfabric ucx hwloc
 
-```
+```bash
 export OMPI_VERSION=4.1.0
 wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-$OMPI_VERSION.tar.gz
 tar -zxf openmpi-$OMPI_VERSION.tar.gz
@@ -62,7 +68,7 @@ make install
 
 Создайте файл `/opt/ohpc/pub/moduledeps/gnu9/openmpi4/4.1.0` с содержанием:
 
-```
+```perl
 #%Module1.0#####################################################################
 
 proc ModulesHelp { } {
@@ -92,6 +98,8 @@ family "MPI"
 ```
 
 ## Как конвертировать публичный ключ Putty в OpenSSH
+
+Если прислали публичный ключ Putty, его сперва нужно подправить чтобы он был принят в OpenSSH.
 
 Putty при генерации ключа выдает на экран корректный ключ OpenSSH, но при сохранении в файл его изменяет. Вот пример файла:
 ```

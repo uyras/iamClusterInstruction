@@ -1,5 +1,88 @@
 # WIKI для админов (подсказки)
 
+## Создание пользователей через консоль
+
+Добавляем пользователя:
+```bash
+sudo useradd <username> -c "Фамилия Имя Отчество"
+```
+вместо `<username>` вписываем имя пользователя.
+
+Затем заходим под пользователем и добавляем ему в учетную записть ssh-ключ:
+```bash
+sudo su - <username>
+nano .ssh/authorized_keys
+```
+В файле уже должен быть прописан один ключ. Его не удаляем, это для логина между узлами кластера.
+
+В конце синхронизируем учетные записи между узлами:
+```bash
+sudo wwsh file resync
+```
+
+На главном узле уже можно работать, на остальных узлах учетные записи синхронизируются в течение 5 минут.
+
+## Настройка openmpi
+
+Чтобы работал srun без доп запуска mpiexec, надо в файле /etc/slurm/slurm.com поменять строку `MpiDefault=none` на `MpiDefault=pmix_v3`.
+
+По умолчанию на кластер ставится рабочая версия openmpi. Но для более плотной интеграции cuda и mpi потребуется пересобрать весь slurm с правильными параметрами.
+
+## Восстановление DNS записи
+
+Если возникла проблема с DNS:
+```
+pdsh -w n[1-12] "echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+```
+
+## Установка и обновление пакетов
+
+На вычислительных узлах пакеты нужно ставить (и обновлять) в двух местах:
+1. В ОС вычислительной машины
+2. В образе ОС.
+
+На примере nano:
+```
+# Ставим на работающих машинах
+pdsh -w n[1-12] yum -y install mesa-libOSMesa 
+
+# ставим и пересобираем образ ОС:
+source export_chroot.sh
+yum -y --installroot=$CHROOT install nano
+wwvnfs centosStream
+```
+
+Обновление пакетов (просто копируем и вставляем в консоль):
+```
+pdsh -w n[1-12],master yum -y update
+source export_chroot.sh
+yum -y --installroot=$CHROOT update
+wwvnfs centosStream
+```
+
+## Как конвертировать публичный ключ Putty в OpenSSH
+
+Если прислали публичный ключ Putty, его сперва нужно подправить чтобы он был принят в OpenSSH.
+
+Putty при генерации ключа выдает на экран корректный ключ OpenSSH, но при сохранении в файл его изменяет. Вот пример файла:
+```
+---- BEGIN SSH2 PUBLIC KEY ----
+Comment: "rsa-key-20210315"
+AAAAB3NzaC1yc2EAAAABJQAAAQEA7rjNFU5cytvNg1GHf7cp/GQohE2l71Lyjy3k
+HEMjhPN4Jy7E8e7oUdfpYrzHr5zj79zUOScbYbpQaKio6sM8VrtMutLBs6qNbuXz
+eZwVHqEOon4vZIj42woyPTc0vjGEXzi+11qGldjPByw4amNDDN61biX2fyUkz05n
+0SaRiKiyu82Ye60VrcEF0GfaZeT5W2y5rCBBBRPLkKzgPsc4Y3EWVAhH9sS5HZBh
+RQ35BZFSlu6dkLP95NvhrE7ZZG+R5ULX5nvLjLucVIoMRTrjeIfCHmgh/GhhIvBq
+1OnBOf3Hs7kDp0e2EbAitWZYBPGMrnGLR2DewG96qf1lMXzhGw==
+---- END SSH2 PUBLIC KEY ----
+```
+
+Это тот же ключ, только разбитый на строки по 64 символа и добавлены коментарии.
+Для записи в формате OpenSSH надо указать тип ключа (обычно ssh-rsa), затем через пробел сам ключ (без пробелов и переносов строк), затем через пробел коментарий к ключу (не обязательно). Пример:
+```
+ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEA7rjNFU5cytvNg1GHf7cp/GQohE2l71Lyjy3kHEMjhPN4Jy7E8e7oUdfpYrzHr5zj79zUOScbYbpQaKio6sM8VrtMutLBs6qNbuXzeZwVHqEOon4vZIj42woyPTc0vjGEXzi+11qGldjPByw4amNDDN61biX2fyUkz05n0SaRiKiyu82Ye60VrcEF0GfaZeT5W2y5rCBBBRPLkKzgPsc4Y3EWVAhH9sS5HZBhRQ35BZFSlu6dkLP95NvhrE7ZZG+R5ULX5nvLjLucVIoMRTrjeIfCHmgh/GhhIvBq1OnBOf3Hs7kDp0e2EbAitWZYBPGMrnGLR2DewG96qf1lMXzhGw== rsa-key-20210315
+```
+
 ## Скрипт для инициализации centos8-stream через wwmkchroot
 
 Файл: `/usr/libexec/warewulf/wwmkchroot/centos-8-stream.tmpl`
@@ -41,14 +124,9 @@ PKGLIST="basesystem bash chkconfig coreutils e2fsprogs ethtool
 # vim:filetype=sh:syntax=sh:expandtab:ts=4:sw=4:
 ```
 
-## Настройка openmpi
+## Сборка специфических пакетов
 
-Чтобы работал srun без доп запуска mpiexec, надо в файле /etc/slurm/slurm.com поменять строку `MpiDefault=none` на `MpiDefault=pmix_v3`.
-
-По умолчанию на кластер ставится рабочая версия openmpi. Но для более плотной интеграции cuda и mpi потребуется пересобрать весь slurm с правильными параметрами.
-
-
-## Сборка openmpi
+### openmpi
 
 Зависимости: libevent libevent-devel pmix libfabric ucx hwloc
 
@@ -97,25 +175,19 @@ depends-on ucx cuda pmix libfabric hwloc
 family "MPI"
 ```
 
-## Как конвертировать публичный ключ Putty в OpenSSH
+### Paraview v5.9.0
 
-Если прислали публичный ключ Putty, его сперва нужно подправить чтобы он был принят в OpenSSH.
+Качаем, компилируем, распаковываем. Сборка через cmake, в отедльной папке. При сборке должен быть доступен MPI.
 
-Putty при генерации ключа выдает на экран корректный ключ OpenSSH, но при сохранении в файл его изменяет. Вот пример файла:
-```
----- BEGIN SSH2 PUBLIC KEY ----
-Comment: "rsa-key-20210315"
-AAAAB3NzaC1yc2EAAAABJQAAAQEA7rjNFU5cytvNg1GHf7cp/GQohE2l71Lyjy3k
-HEMjhPN4Jy7E8e7oUdfpYrzHr5zj79zUOScbYbpQaKio6sM8VrtMutLBs6qNbuXz
-eZwVHqEOon4vZIj42woyPTc0vjGEXzi+11qGldjPByw4amNDDN61biX2fyUkz05n
-0SaRiKiyu82Ye60VrcEF0GfaZeT5W2y5rCBBBRPLkKzgPsc4Y3EWVAhH9sS5HZBh
-RQ35BZFSlu6dkLP95NvhrE7ZZG+R5ULX5nvLjLucVIoMRTrjeIfCHmgh/GhhIvBq
-1OnBOf3Hs7kDp0e2EbAitWZYBPGMrnGLR2DewG96qf1lMXzhGw==
----- END SSH2 PUBLIC KEY ----
-```
+```bash
+wget "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.9&type=source&os=Sources&downloadFile=ParaView-v5.9.0.tar.gz" -O ParaView-v5.9.0.tar.gz
 
-Это тот же ключ, только разбитый на строки по 64 символа и добавлены коментарии.
-Для записи в формате OpenSSH надо указать тип ключа (обычно ssh-rsa), затем через пробел сам ключ (без пробелов и переносов строк), затем через пробел коментарий к ключу (не обязательно). Пример:
-```
-ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEA7rjNFU5cytvNg1GHf7cp/GQohE2l71Lyjy3kHEMjhPN4Jy7E8e7oUdfpYrzHr5zj79zUOScbYbpQaKio6sM8VrtMutLBs6qNbuXzeZwVHqEOon4vZIj42woyPTc0vjGEXzi+11qGldjPByw4amNDDN61biX2fyUkz05n0SaRiKiyu82Ye60VrcEF0GfaZeT5W2y5rCBBBRPLkKzgPsc4Y3EWVAhH9sS5HZBhRQ35BZFSlu6dkLP95NvhrE7ZZG+R5ULX5nvLjLucVIoMRTrjeIfCHmgh/GhhIvBq1OnBOf3Hs7kDp0e2EbAitWZYBPGMrnGLR2DewG96qf1lMXzhGw== rsa-key-20210315
+mkdir paraview-build
+cd paraview-build
+
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/opt/soft/paraview/5.9.0 -DCMAKE_BUILD_TYPE=Release -DINSTALL_DOCS=ON -DPARAVIEW_USE_QT=OFF -DVTK_OPENGL_HAS_OSMESA=ON -DVTK_USE_OFFSCREEN=ON -DPARAVIEW_USE_MPI=ON -DPARAVIEW_USE_PYTHON=ON -DPARAVIEW_BUILD_WITH_EXTERNAL=OFF -DVTK_USE_X=OFF -DPARAVIEW_BUILD_EXAMPLES=ON -DVTKm_ENABLE_OPENMP=ON -DVTKm_ENABLE_TBB=ON -DVTKm_ENABLE_MPI=ON ../ParaView-v5.9.0
+
+make -j
+
+sudo make install
 ```

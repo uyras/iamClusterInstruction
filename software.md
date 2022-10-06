@@ -56,6 +56,35 @@ OpenFOAM (.org) доступен по адресу `/opt/soft/openfoam.org`.
 source /opt/soft/openfoam/OpenFOAM-8/etc/bashrc
 ```
 
+### Anaconda 2
+
+ПО установлено на всех узлах (в сетевой папке). Для активации запустите команду:
+```
+/opt/soft/anaconda2/bin/conda init
+```
+
+Для временного отключения запустите:
+```
+conda deactivate
+```
+если нужно перманентно отключить anaconda2, удалите следующие строчки из файла `~/.bashrc`:
+```
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/opt/soft/anaconda2/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/opt/soft/anaconda2/etc/profile.d/conda.sh" ]; then
+        . "/opt/soft/anaconda2/etc/profile.d/conda.sh"
+    else
+        export PATH="/opt/soft/anaconda2/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+```
+
 <!---
 ### Paraview
 

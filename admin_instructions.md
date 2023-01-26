@@ -191,3 +191,17 @@ make -j
 
 sudo make install
 ```
+
+### Сервер лицензий Comsol
+
+```
+systemctl start lmcomsol.service
+```
+
+### Сервер лицензий ANSYS
+
+```
+cd /opt/soft/ANSYS/2021_R2/shared_files/licensing
+./start_ansysli
+```
+менеджер лицензий в той же папке

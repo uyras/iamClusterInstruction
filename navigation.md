@@ -6,4 +6,4 @@
 [ПО](software.md)
 [Управление заданиями](jobs.md)
 [Генерация ключей](key_generation.md)
-[-](admin_instructions.md)
+[ ](admin_instructions.md)

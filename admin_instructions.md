@@ -205,3 +205,30 @@ cd /opt/soft/ANSYS/2021_R2/shared_files/licensing
 ./start_ansysli
 ```
 менеджер лицензий в той же папке
+
+
+### Регистрация новых пользователей
+
+`cat /etc/group` - вывести список групп и проверить есть ли нужная группа в списке
+`groupadd "group_name"` - добавить группу
+`useradd -G 'group_name' -c "ФИО" -m user_name` - создать пользователя. Группу указывать не обязательно
+`chage -E 2025-09-01 user_name` - изменить срок действия учетной записи. В примере срок до 01.09.2025
+`chage -l user_name` - посмотреть срок действия учетки
+
+Далее как добавлять ключ:
+создание папки для ssh-ключей:
+```bash
+mkdir /home/user_name/.ssh
+chown -R user_name:user_name /home/user_name/.ssh
+chmod 700 /home/user_name/.ssh
+```
+
+добавление ключа (public_key заменить на публичный ключ пользователя):
+```bash
+touch /home/user_name/.ssh/authorized_keys
+chmod 600 /home/user_name/.ssh/authorized_keys
+chown -R user_name:user_name /home/user_name/.ssh/authorized_keys
+echo "public_key" >> /home/user_name/.ssh/authorized_keys
+```
+
+`wwsh file sync` - синхронизировать учетки между узлами (обязательно)
